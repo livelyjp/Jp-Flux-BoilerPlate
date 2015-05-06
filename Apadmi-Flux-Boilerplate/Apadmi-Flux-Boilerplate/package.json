@@ -1,0 +1,31 @@
+{
+  "version": "1.0.0",
+  "name": "ApadmiFluxBoilerPlate",
+  "dependencies": {
+    "flux": "^2.0.1",
+    "react": "^0.12.0",
+    "object-assign": "^2.0.0",
+    "keymirror": "^0.1.1",
+    "events": "^1.0.2",
+    "superagent": "^1.2.0"
+  },
+  "devDependencies": {
+    "bower": "^1.3.12",
+    "gulp": "^3.8.11",
+    "gulp-bower": "^0.0.10",
+    "gulp-react": "3.0.1",
+    "gulp-sourcemaps": "~1.5.0",
+    "gulp-watch": "4.2.0",
+    "gulp-notify": "^2.2.0",
+    "gulp-util": "^3.0.4",
+    "gulp-rename": "^1.2.2",
+    "run-sequence": "~1.0.2",
+    "vinyl-transform": "1.0.0",
+    "uglify-js": "2.4.17",
+    "vinyl-source-stream": "1.1.0",
+    "del": "1.1.1",
+    "browserify": "~9.0.3",
+    "watchify": "^3.1.2",
+    "reactify": "^1.1.0"
+  }
+}
