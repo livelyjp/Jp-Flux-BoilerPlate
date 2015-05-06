@@ -30,7 +30,7 @@ var Application = React.createClass({
             <div>
                 <h1>Hello World</h1>
                 {
-                    this.data.map(function(item){
+                    this.state.data.map(function(item){
                         return <div>item.id</div>
                     })
                 }

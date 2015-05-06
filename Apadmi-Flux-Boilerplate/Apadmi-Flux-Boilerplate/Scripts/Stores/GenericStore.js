@@ -39,9 +39,11 @@ var GenericStore = assign({}, EventEmitter.prototype, {
     },
 
     getAll: function() {
+        if(_myCollection.map === undefined) return [];
         return _myCollection;
     }
 });
+
 
 GenericStore.dispatchToken = AppDispatcher.register(function(action) {
     console.log("Generic Store Action Received: " + action.type);
