@@ -12,10 +12,12 @@ var CHANGE_EVENT = 'REFERRAL_STORE_CHANGE';
 
 var _myCollection = {};
 
+
 function _addItem(item){
     if(!_myCollection[item.id]) {
         _myCollection[item.id] = item;
     }
+    var to = false;
 }
 
 var GenericStore = assign({}, EventEmitter.prototype, {
@@ -43,7 +45,6 @@ var GenericStore = assign({}, EventEmitter.prototype, {
         return _myCollection;
     }
 });
-
 
 GenericStore.dispatchToken = AppDispatcher.register(function(action) {
     console.log("Generic Store Action Received: " + action.type);

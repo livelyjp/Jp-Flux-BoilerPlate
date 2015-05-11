@@ -1,95 +1,114 @@
 
-var del = require('del');
 var gulp = require('gulp');
 var bower = require('gulp-bower');
+var notify = require('gulp-notify');
+var watch = require('gulp-watch');
+var eslint = require('gulp-eslint');
+var gStreamify = require('gulp-streamify');
+var cached = require('gulp-cached');
+var uglify = require('gulp-uglify');
+var gutil = require('gulp-util');
 var runSequence = require('run-sequence');
 var source = require('vinyl-source-stream');
 var browserify = require('browserify');
 var watchify = require('watchify');
 var reactify = require('reactify');
-var notify = require('gulp-notify');
-var gutil = require('gulp-util');
+var envify = require('envify');
+var del = require('del');
 
-var tasks = [];
-var scriptsDir = './Scripts';
-var entryFileName = "Components/Application.jsx";
-var releaseDir = scriptsDir + '/release';
+var scriptsDir = './Scripts/Application';
+var releaseDir = './Scripts/release';
+var entryPoints = [scriptsDir + '/Application.jsx'];
 var releaseBundleFileName = 'bundle.js';
 
-/*
- *
- * Project setup Tasks
- *
- */
+var jsLintDir = scriptsDir + '/**/*.js';
+var jsxLintDir = scriptsDir + '/**/*.jsx';
 
-//This task sets up all the required bower components and does the initial JSX build, bundle and watch
-gulp.task('setup-gulp', function (callback) {
-    runSequence('clean-release', 'get-bower-npm-components', 'startWatch', callback);
+var isProduction = false;
+
+gulp.task('start', function (callback) {
+    runSequence('check-environment', 'clean-release-dir', 'install-bower-components', ['watch-and-bundle-jsx-js-scripts', 'watch-and-lint-jsx-js-scripts'], callback);
 });
 
-//Import all required bower packages
-gulp.task('get-bower-npm-components', function () {
+gulp.task('check-environment', function() {
+    return console.log('Is Environment Production: ' + isProduction);
+});
+
+gulp.task('install-bower-components', function () {
     return bower({ layout: "byComponent" });
 });
 
-/*
- *
- * Project Build and Clean Tasks
- *
- */
-
-//Deletes Release Folder
-gulp.task('clean-release', function (callback) {
-    del([scriptsDir + '/release/'], callback);
+gulp.task('clean-release-dir', function () {
+    console.log("Cleaning Dir: " + releaseDir);
+    return del([releaseDir]);
 });
 
-/*
- *
- * JSX Development Tasks
- *
- */
-
-gulp.task('initialBuild', ['clean-release'], function() {
-    return bundleFiles(entryFileName, false);
+gulp.task('bundle-jsx-js-scripts', ['clean-release-dir'], function () {
+    return bundleScripts(false);
 });
 
-gulp.task('startWatch', ['initialBuild'], function() {
-    return bundleFiles(entryFileName, true);
+gulp.task('watch-and-bundle-jsx-js-scripts', ['clean-release-dir'], function () {
+    return bundleScripts(true);
 });
 
-function bundleFiles(file, watch) {
-    var entryFile = scriptsDir + '/' + file;
-    console.log("Entry File: " + entryFile);
-    var props = {entries: [entryFile], debug: true, cache: {}, packageCache: {}, extensions: ['.jsx']};
-    //var props = {entries: [entryFile], debug: true, cache: {}, packageCache: {}, insertGlobals: true, extensions: ['.jsx']};
-    var bundler = watch ? watchify(browserify(props)) : browserify(props);
+gulp.task('lint-jsx-js-scripts', function () {
+    return lintScripts();
+});
 
-    bundler.on('update', function(){
-        gutil.log('Rebundling From Update...');
-        rebundle(bundler);
-        gutil.log('Rebundling Complete');
+gulp.task('watch-and-lint-jsx-js-scripts', function () {
+    gulp.watch([jsLintDir, jsxLintDir], ['lint-jsx-js-scripts']);
+});
+
+function bundleScripts(watch) {
+    console.log("Entry Files: " + entryPoints);
+
+    var bundler = browserify({
+        debug: !isProduction,
+        entries: entryPoints,
+        cache: {},
+        packageCache: {},
+        fullPaths: watch,
+        extensions: ['.jsx']
     });
-    return rebundle(bundler);
+    if (watch) {
+        bundler = watchify(bundler);
+    }
+    addTransformsToBundler(bundler);
+
+    function rebundle() {
+        console.log("Rebundling");
+        var stream = bundler.bundle();
+        stream.on('error', handleError("Browserify"));
+        stream = stream.pipe(source(releaseBundleFileName));
+        if (isProduction) {
+            stream.pipe(gStreamify(uglify({mangle: false})));
+        }
+        return stream.pipe(gulp.dest(releaseDir));
+    }
+
+    bundler.on('update', rebundle);
+    return rebundle();
 }
 
-function rebundle(bundler) {
-    gutil.log('Starting To Compile React Components');
+function addTransformsToBundler(bundler) {
     bundler.transform(reactify);
-    gutil.log('React Compilation Complete');
-
-    var stream = bundler.bundle();
-    return stream.on('error', handleErrors)
-        .pipe(source(releaseBundleFileName))
-        .pipe(gulp.dest(releaseDir));
+    bundler.transform({ global: true }, envify);
 }
 
-function handleErrors() {
-    var args = Array.prototype.slice.call(arguments);
-    notify.onError({
-        title: "Compile Error",
-        message: "<%= error.message %>"
-    }).apply(this, args);
-    this.emit('end'); // Keep gulp from hanging on this task
+function lintScripts() {
+    console.log("Linting files");
+    return gulp.src([jsLintDir, jsxLintDir])
+        .pipe(cached('Linting')) //Comment Out To See All Errors
+        .pipe(eslint())
+        .pipe(eslint.format())
+        .pipe(eslint.failAfterError());
 }
 
-gulp.task('default', tasks);
+function handleError(task) {
+    return function (err) {
+        gutil.log(gutil.colors.red(err));
+        notify.onError(task + ' failed, check the logs...')(err);
+    };
+}
+
+gulp.task('default', ['start']);

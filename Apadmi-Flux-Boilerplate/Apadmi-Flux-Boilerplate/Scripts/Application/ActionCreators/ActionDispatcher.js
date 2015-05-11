@@ -2,7 +2,7 @@
  * Created by jonnyp on 06/05/2015.
  */
 
-var AppDispatcher = require('../Dispatcher/AppDispatcher');
+var AppDispatcher = require('./AppDispatcher');
 
 function _dispatch(action){
     console.log("Dispatching Action: " + action.type);

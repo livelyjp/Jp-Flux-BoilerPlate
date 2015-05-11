@@ -1,11 +1,12 @@
 var React = require('react');
-var GenericStore = require('../Stores/GenericStore');
+var GenericStore = require('../Store/GenericStore');
 
 function getStoreData(){
     return({
         data: GenericStore.getAll()
     });
 }
+
 
 var Application = React.createClass({
 
@@ -25,13 +26,14 @@ var Application = React.createClass({
         this.setState(getStoreData());
     },
 
+
     render: function () {
         return (
             <div>
                 <h1>Hello World</h1>
                 {
                     this.state.data.map(function(item){
-                        return <div>item.id</div>
+                        return (<div>{item.id}</div>);
                     })
                 }
             </div>
@@ -39,4 +41,5 @@ var Application = React.createClass({
     }
 });
 
-React.render(<Application />, document.getElementById('main'))
+React.render(<Application />, document.getElementById('main'));
+module.exports = Application;
